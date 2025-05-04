@@ -1,7 +1,5 @@
--- lua/tasks/init.lua
 local M = {}
 
--- Function to load tasks from tasks.json
 local function load_tasks()
 	local task_file = vim.fn.getcwd() .. "/tasks.json"
 	local tasks = {}
@@ -26,26 +24,35 @@ local function load_tasks()
 	return tasks
 end
 
--- Function to display tasks using Telescope
 local function display_tasks(tasks)
 	local task_names = {}
 	for _, task in ipairs(tasks) do
 		table.insert(task_names, task.name)
 	end
 
-	-- Show task names in Telescope
-	require("telescope.builtin").pickers.new({}, {
-		prompt_title = "Tasks",
-		finder = require("telescope.finders").new_table(task_names),
-		sorter = require("telescope.sorters").get_fuzzy_file(),
-	}):find()
+	if #task_names > 0 then
+		-- Show task names in Telescope
+		require("telescope.pickers").new({
+			prompt_title = "Tasks",
+			finder = require("telescope.finders").new_table({
+				results = task_names,
+				entry_maker = function(entry)
+					return { value = entry, display = entry, ordinal = entry }
+				end
+			}),
+			sorter = require("telescope.sorters").get_fuzzy_file(),
+		}):find()
+	else
+		vim.notify("No tasks found in tasks.json", vim.log.levels.INFO)
+	end
 end
 
--- Function to open tasks picker
 function M.open_tasks()
 	local tasks = load_tasks()
 	if next(tasks) ~= nil then
 		display_tasks(tasks)
+	else
+		vim.notify("No tasks available", vim.log.levels.INFO)
 	end
 end
 
